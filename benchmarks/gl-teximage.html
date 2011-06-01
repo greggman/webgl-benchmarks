@@ -1,0 +1,44 @@
+<!--
+Copyright (c) 2011 The Chromium Authors. All rights reserved.
+Use of this source code is governed by a BSD-style license that can be
+found in the LICENSE file.
+ -->
+<!DOCTYPE html>
+<html>
+<head>
+<title>WebGL tests how quickly textures can be uploaded with texImage2d.</title>
+<link rel="stylesheet" href="../resources/style.css"/>
+<script src="../scripts/benchmark-utils.js"></script>
+</head>
+<body>
+<canvas id="example" width="4" height="4" style="width: 40px; height: 30px;"></canvas>
+<div id="description"></div>
+<div id="console"></div>
+<script>
+var bu = BenchmarkUtils;
+var canvas = document.getElementById("example");
+var gl = bu.create3DContext(canvas);
+var srcCanvas = document.createElement("canvas");
+var srcCanvas.width = 256;
+var srcCanvas.height = 256;
+
+// Test pre-mult
+// Test non-pre-mult
+// Test flip
+// Test various formats
+for (var ii = 0; ii < 10000; ++ii) {
+   var tex = gl.createTexture();
+   gl.bindTexture(gl.TEXTURE_2D, tex);
+   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, srcCanvas);
+   gl.deleteTexture(tex);
+}
+
+glErrorShouldBe(gl, gl.NO_ERROR, "Should be no errors from setup.");
+
+successfullyParsed = true;
+</script>
+
+</body>
+</html>
+
+
