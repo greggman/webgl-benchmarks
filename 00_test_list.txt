@@ -1,0 +1,5 @@
+// files that end in .txt list other benchmarks
+// other lines are assumed to be .html files
+
+benchmarks/00_test_list.txt
+

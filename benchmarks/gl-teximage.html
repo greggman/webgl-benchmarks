@@ -1,0 +1,133 @@
+<!--
+Copyright (c) 2011 The Chromium Authors. All rights reserved.
+Use of this source code is governed by a BSD-style license that can be
+found in the LICENSE file.
+ -->
+<!DOCTYPE html>
+<html>
+<head>
+<title>WebGL tests speed of various ways of modifiying a texture.</title>
+<link rel="stylesheet" href="../resources/style.css"/>
+<script src="../scripts/benchmark-utils.js"></script>
+</head>
+<body>
+<canvas id="example" width="4" height="4" style="width: 40px; height: 30px;"></canvas>
+<div id="description"></div>
+<div id="console"></div>
+<script>
+var bu = BenchmarkUtils;
+
+var tests = [
+  (function() {
+    var width = 64;
+    var height = 64;
+    var pixels;
+    var tex;
+
+    function init(gl) {
+      pixels = new Uint8Array(width * height * 4);
+      tex = gl.createTexture()
+      gl.bindTexture(gl.TEXTURE_2D, tex);
+    }
+
+    function test(gl) {
+      gl.texImage2D(
+          gl.TEXTURE_2D, 0, gl.RGBA, width, height,
+          0, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+    }
+
+    return {
+      name: 'texImage2D-Uint8Array',
+      init: init,
+      test: test
+    }
+  })(),
+  (function() {
+    var width = 64;
+    var height = 64;
+    var pixels;
+    var tex;
+
+    function init(gl) {
+      pixels = new Uint8Array(width * height * 4);
+      tex = gl.createTexture()
+      gl.bindTexture(gl.TEXTURE_2D, tex);
+      gl.texImage2D(
+          gl.TEXTURE_2D, 0, gl.RGBA, width, height,
+          0, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+    }
+
+    function test(gl) {
+      gl.texSubImage2D(
+          gl.TEXTURE_2D, 0, 0, 0, width, height,
+          gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+    }
+
+    return {
+      name: 'texSubImage2D-Uint8Array',
+      init: init,
+      test: test
+    }
+  })(),
+];
+
+var numRuns = 10;
+var numIterations = 100;
+var maxTime = 100;
+var gl = bu.create3DContext();
+var testIndex = 0;
+
+runNextTest();
+
+function runNextTest() {
+  var test = tests[testIndex++];
+  test.init(gl);
+
+  var minIPS;
+  var maxIPS;
+  var totalIPS = 0;
+
+  for (var r = 0; r < numRuns; ++r) {
+    var loopCount = 0;
+    var start = Date.now();
+    while (Date.now() - start < maxTime) {
+      ++loopCount;
+      for (var it = 0; it < numIterations; ++it) {
+        test.test(gl);
+      }
+    }
+    var secondsElapsed = (Date.now() - start) * 0.001;
+    var totalIterations = loopCount * numRuns;
+    var iterationsPerSecond = Math.floor(totalIterations / secondsElapsed);
+
+    if (r == 0) {
+      minIPS = iterationsPerSecond;
+      maxIPS = iterationsPerSecond;
+    } else {
+      minIPS = Math.min(minIPS, iterationsPerSecond);
+      maxIPS = Math.max(maxIPS, iterationsPerSecond);
+    }
+    totalIPS += iterationsPerSecond;
+  }
+  var err = gl.getError();
+  if (err) {
+    fail(bu.glEnumToString(err));
+  }
+
+  var averageIPS = Math.floor(totalIPS / numRuns);
+  bu.output(test.name + ': average = ' + averageIPS +
+         'ips, min = ' + minIPS +
+         'ips, max = ' + maxIPS +
+         'ips');
+
+  if (testIndex < tests.length) {
+    setTimeout(runNextTest, 100);
+  }
+}
+
+</script>
+
+</body>
+</html>
+
+
