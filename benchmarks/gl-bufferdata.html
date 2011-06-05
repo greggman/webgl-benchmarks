@@ -7,7 +7,7 @@ found in the LICENSE file.
 <html>
 <head>
 <meta charset="utf-8">
-<title>WebGL tests speed of various ways of modifiying a texture.</title>
+<title>WebGL tests speed of various ways of modifiying a buffer.</title>
 <link rel="stylesheet" href="../resources/style.css"/>
 <script src="../scripts/benchmark-utils.js"></script>
 </head>
@@ -15,64 +15,54 @@ found in the LICENSE file.
 <script>
 var bu = BenchmarkUtils;
 
-function makeTexImage2DTest(width, height) {
-    var pixels;
-    var tex;
+function makeBufferDataTest(size, usage) {
+    var data;
+    var buffer;
 
     function init(gl) {
-      pixels = new Uint8Array(width * height * 4);
-      tex = gl.createTexture()
-      gl.bindTexture(gl.TEXTURE_2D, tex);
+      data = new Uint8Array(size);
+      buffer = gl.createBuffer()
+      gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
     }
 
     function test(gl) {
-      gl.texImage2D(
-          gl.TEXTURE_2D, 0, gl.RGBA, width, height,
-          0, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+      gl.bufferData(gl.ARRAY_BUFFER, data, gl[usage]);
     }
 
     return {
-      name: 'texImage2D-Uint8Array-' + width + 'x' + height,
+      name: 'bufferData-' + size + '-' + usage,
       init: init,
       test: test
     }
 }
 
-function makeTexSubImage2DTest(width, height) {
-    var pixels;
-    var tex;
+function makeBufferSubDataTest(size, usage) {
+    var data;
+    var buffer;
 
     function init(gl) {
-      pixels = new Uint8Array(width * height * 4);
-      tex = gl.createTexture()
-      gl.bindTexture(gl.TEXTURE_2D, tex);
-      gl.texImage2D(
-          gl.TEXTURE_2D, 0, gl.RGBA, width, height,
-          0, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+      data = new Uint8Array(size);
+      buffer = gl.createBuffer()
+      gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+      gl.bufferData(gl.ARRAY_BUFFER, data, gl[usage]);
     }
 
     function test(gl) {
-      gl.texSubImage2D(
-          gl.TEXTURE_2D, 0, 0, 0, width, height,
-          gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+      gl.bufferSubData(gl.ARRAY_BUFFER, 0, data);
     }
 
     return {
-      name: 'texSubImage2D-Uint8Array-' + width + 'x' + height,
+      name: 'bufferSubData-' + size + '-' + usage,
       init: init,
       test: test
     }
 }
 
 var tests = [
-  makeTexImage2DTest(64,64),
-  makeTexSubImage2DTest(64,64),
-  makeTexImage2DTest(63,63),
-  makeTexSubImage2DTest(65,65),
-  makeTexImage2DTest(256,256),
-  makeTexSubImage2DTest(256,256),
-  makeTexImage2DTest(1024,1024),
-  makeTexSubImage2DTest(1024,1024),
+  makeBufferDataTest(1024 * 16, 'STATIC_DRAW'),
+  makeBufferSubDataTest(1024 * 16, 'STATIC_DRAW'),
+  makeBufferDataTest(1024 * 256, 'STATIC_DRAW'),
+  makeBufferSubDataTest(1024 * 256, 'STATIC_DRAW')
 ];
 
 var numRuns = 10;
