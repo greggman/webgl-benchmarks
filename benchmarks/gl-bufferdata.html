@@ -1,0 +1,126 @@
+<!--
+Copyright (c) 2011 The Chromium Authors. All rights reserved.
+Use of this source code is governed by a BSD-style license that can be
+found in the LICENSE file.
+ -->
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>WebGL tests speed of various ways of modifiying a buffer.</title>
+<link rel="stylesheet" href="../resources/style.css"/>
+<script src="../scripts/benchmark-utils.js"></script>
+</head>
+<body>
+<script>
+var bu = BenchmarkUtils;
+
+function makeBufferDataTest(size, usage) {
+    var data;
+    var buffer;
+
+    function init(gl) {
+      data = new Uint8Array(size);
+      buffer = gl.createBuffer()
+      gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+    }
+
+    function test(gl) {
+      gl.bufferData(gl.ARRAY_BUFFER, data, gl[usage]);
+    }
+
+    return {
+      name: 'bufferData-' + size + '-' + usage,
+      init: init,
+      test: test
+    }
+}
+
+function makeBufferSubDataTest(size, usage) {
+    var data;
+    var buffer;
+
+    function init(gl) {
+      data = new Uint8Array(size);
+      buffer = gl.createBuffer()
+      gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+      gl.bufferData(gl.ARRAY_BUFFER, data, gl[usage]);
+    }
+
+    function test(gl) {
+      gl.bufferSubData(gl.ARRAY_BUFFER, 0, data);
+    }
+
+    return {
+      name: 'bufferSubData-' + size + '-' + usage,
+      init: init,
+      test: test
+    }
+}
+
+var tests = [
+  makeBufferDataTest(1024 * 16, 'STATIC_DRAW'),
+  makeBufferSubDataTest(1024 * 16, 'STATIC_DRAW'),
+  makeBufferDataTest(1024 * 256, 'STATIC_DRAW'),
+  makeBufferSubDataTest(1024 * 256, 'STATIC_DRAW')
+];
+
+var numRuns = 10;
+var numIterations = 100;
+var maxTime = 100;
+var gl = bu.create3DContext();
+var testIndex = 0;
+
+runNextTest();
+
+function runNextTest() {
+  var test = tests[testIndex++];
+  test.init(gl);
+
+  var minIPS;
+  var maxIPS;
+  var totalIPS = 0;
+
+  for (var r = 0; r < numRuns; ++r) {
+    var loopCount = 0;
+    var start = Date.now();
+    while (Date.now() - start < maxTime) {
+      ++loopCount;
+      for (var it = 0; it < numIterations; ++it) {
+        test.test(gl);
+      }
+    }
+    var secondsElapsed = (Date.now() - start) * 0.001;
+    var totalIterations = loopCount * numRuns;
+    var iterationsPerSecond = Math.floor(totalIterations / secondsElapsed);
+
+    if (r == 0) {
+      minIPS = iterationsPerSecond;
+      maxIPS = iterationsPerSecond;
+    } else {
+      minIPS = Math.min(minIPS, iterationsPerSecond);
+      maxIPS = Math.max(maxIPS, iterationsPerSecond);
+    }
+    totalIPS += iterationsPerSecond;
+  }
+  var err = gl.getError();
+  if (err) {
+    fail(bu.glEnumToString(err));
+  }
+
+  var averageIPS = Math.floor(totalIPS / numRuns);
+  bu.output(test.name + ': average = ' + averageIPS +
+         'ips, min = ' + minIPS +
+         'ips, max = ' + maxIPS +
+         'ips');
+
+  if (testIndex < tests.length) {
+    setTimeout(runNextTest, 100);
+  }
+}
+
+</script>
+</body>
+</html>
+
+
