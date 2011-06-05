@@ -23,6 +23,9 @@ function makeTexImage2DTest(width, height) {
       pixels = new Uint8Array(width * height * 4);
       tex = gl.createTexture()
       gl.bindTexture(gl.TEXTURE_2D, tex);
+      gl.texImage2D(
+          gl.TEXTURE_2D, 0, gl.RGBA, width, height,
+          0, gl.RGBA, gl.UNSIGNED_BYTE, null);
     }
 
     function test(gl) {
@@ -38,27 +41,37 @@ function makeTexImage2DTest(width, height) {
     }
 }
 
-function makeTexSubImage2DTest(width, height) {
+function makeTexSubImage2DTest(width, height, xOffset, yOffset, fullWidth, fullHeight) {
+    xOffset = xOffset || 0;
+    yOffset = yOffset || 0;
+    fullWidth = fullWidth || width;
+    fullHeight = fullHeight || height;
     var pixels;
     var tex;
+
+    var suffix = '' + width + 'x' + height;
+    if (width != fullWidth || height != fullHeight) {
+      suffix = suffix + '@' + xOffset + ',' + yOffset +
+          ' in ' + fullWidth + 'x' + fullHeight;
+    }
 
     function init(gl) {
       pixels = new Uint8Array(width * height * 4);
       tex = gl.createTexture()
       gl.bindTexture(gl.TEXTURE_2D, tex);
       gl.texImage2D(
-          gl.TEXTURE_2D, 0, gl.RGBA, width, height,
-          0, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+          gl.TEXTURE_2D, 0, gl.RGBA, fullWidth, fullHeight,
+          0, gl.RGBA, gl.UNSIGNED_BYTE, null);
     }
 
     function test(gl) {
       gl.texSubImage2D(
-          gl.TEXTURE_2D, 0, 0, 0, width, height,
+          gl.TEXTURE_2D, 0, xOffset, yOffset, width, height,
           gl.RGBA, gl.UNSIGNED_BYTE, pixels);
     }
 
     return {
-      name: 'texSubImage2D-Uint8Array-' + width + 'x' + height,
+      name: 'texSubImage2D-Uint8Array-' + suffix,
       init: init,
       test: test
     }
@@ -68,11 +81,25 @@ var tests = [
   makeTexImage2DTest(64,64),
   makeTexSubImage2DTest(64,64),
   makeTexImage2DTest(63,63),
+  makeTexSubImage2DTest(63,63),
+  makeTexImage2DTest(65,65),
   makeTexSubImage2DTest(65,65),
   makeTexImage2DTest(256,256),
   makeTexSubImage2DTest(256,256),
   makeTexImage2DTest(1024,1024),
   makeTexSubImage2DTest(1024,1024),
+  makeTexSubImage2DTest(32, 32, 0, 0, 1024,1024),
+  makeTexSubImage2DTest(32, 32, 1, 1, 1024,1024),
+  makeTexSubImage2DTest(64, 64, 0, 0, 1024,1024),
+  makeTexSubImage2DTest(64, 64, 1, 1, 1024,1024),
+  makeTexSubImage2DTest(256, 256, 0, 0, 1024,1024),
+  makeTexSubImage2DTest(256, 256, 1, 1, 1024,1024),
+  makeTexSubImage2DTest(512, 512, 0, 0, 1024,1024),
+  makeTexSubImage2DTest(512, 512, 1, 1, 1024,1024),
+  makeTexSubImage2DTest(1024, 512, 0, 0, 1024,1024),
+  makeTexSubImage2DTest(512, 1024, 0, 0, 1024,1024),
+  makeTexSubImage2DTest(1024, 768, 0, 0, 1024,1024),
+  makeTexSubImage2DTest(768, 1024, 0, 0, 1024,1024),
 ];
 
 var numRuns = 10;
@@ -115,7 +142,7 @@ function runNextTest() {
   }
   var err = gl.getError();
   if (err) {
-    fail(bu.glEnumToString(err));
+    bu.fail(bu.glEnumToString(gl, err));
   }
 
   var averageIPS = Math.floor(totalIPS / numRuns);
