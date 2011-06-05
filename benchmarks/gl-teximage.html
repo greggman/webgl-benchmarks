@@ -17,10 +17,7 @@ found in the LICENSE file.
 <script>
 var bu = BenchmarkUtils;
 
-var tests = [
-  (function() {
-    var width = 64;
-    var height = 64;
+function makeTexImage2DTest(width, height) {
     var pixels;
     var tex;
 
@@ -37,14 +34,13 @@ var tests = [
     }
 
     return {
-      name: 'texImage2D-Uint8Array',
+      name: 'texImage2D-Uint8Array-' + width + 'x' + height,
       init: init,
       test: test
     }
-  })(),
-  (function() {
-    var width = 64;
-    var height = 64;
+}
+
+function makeTexSubImage2DTest(width, height) {
     var pixels;
     var tex;
 
@@ -64,11 +60,21 @@ var tests = [
     }
 
     return {
-      name: 'texSubImage2D-Uint8Array',
+      name: 'texSubImage2D-Uint8Array-' + width + 'x' + height,
       init: init,
       test: test
     }
-  })(),
+}
+
+var tests = [
+  makeTexImage2DTest(64,64), 
+  makeTexSubImage2DTest(64,64), 
+  makeTexImage2DTest(63,63), 
+  makeTexSubImage2DTest(65,65), 
+  makeTexImage2DTest(256,256), 
+  makeTexSubImage2DTest(256,256), 
+  makeTexImage2DTest(1024,1024), 
+  makeTexSubImage2DTest(1024,1024), 
 ];
 
 var numRuns = 10;
