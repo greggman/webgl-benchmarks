@@ -23,6 +23,7 @@ function makeBufferDataTest(size, usage) {
       data = new Uint8Array(size);
       buffer = gl.createBuffer()
       gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+      gl.bufferData(gl.ARRAY_BUFFER, size, gl[usage]);
     }
 
     function test(gl) {
@@ -36,23 +37,29 @@ function makeBufferDataTest(size, usage) {
     }
 }
 
-function makeBufferSubDataTest(size, usage) {
+function makeBufferSubDataTest(size, usage, offset, fullSize) {
+    fullSize = fullSize || size;
+    offset = offset || 0;
     var data;
     var buffer;
+    var suffix = '' + size + '-' + usage;
+    if (fullSize != size) {
+      suffix = suffix + '@' + offset + ' in ' + fullSize;
+    }
 
     function init(gl) {
       data = new Uint8Array(size);
       buffer = gl.createBuffer()
       gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-      gl.bufferData(gl.ARRAY_BUFFER, data, gl[usage]);
+      gl.bufferData(gl.ARRAY_BUFFER, fullSize, gl[usage]);
     }
 
     function test(gl) {
-      gl.bufferSubData(gl.ARRAY_BUFFER, 0, data);
+      gl.bufferSubData(gl.ARRAY_BUFFER, offset, data);
     }
 
     return {
-      name: 'bufferSubData-' + size + '-' + usage,
+      name: 'bufferSubData-' + suffix,
       init: init,
       test: test
     }
@@ -62,7 +69,17 @@ var tests = [
   makeBufferDataTest(1024 * 16, 'STATIC_DRAW'),
   makeBufferSubDataTest(1024 * 16, 'STATIC_DRAW'),
   makeBufferDataTest(1024 * 256, 'STATIC_DRAW'),
-  makeBufferSubDataTest(1024 * 256, 'STATIC_DRAW')
+  makeBufferSubDataTest(1024 * 256, 'STATIC_DRAW'),
+  makeBufferSubDataTest(1024 * 16, 'STATIC_DRAW', 0, 1024*1024),
+  makeBufferSubDataTest(1024 * 16, 'STATIC_DRAW', 1, 1024*1024),
+  makeBufferSubDataTest(1024 * 64, 'STATIC_DRAW', 0, 1024*1024),
+  makeBufferSubDataTest(1024 * 64, 'STATIC_DRAW', 1, 1024*1024),
+  makeBufferSubDataTest(1024 * 256, 'STATIC_DRAW', 0, 1024*1024),
+  makeBufferSubDataTest(1024 * 256, 'STATIC_DRAW', 1, 1024*1024),
+  makeBufferSubDataTest(1024 * 512, 'STATIC_DRAW', 0, 1024*1024),
+  makeBufferSubDataTest(1024 * 512, 'STATIC_DRAW', 1, 1024*1024),
+  makeBufferSubDataTest(1024 * 768, 'STATIC_DRAW', 0, 1024*1024),
+  makeBufferSubDataTest(1024 * 768, 'STATIC_DRAW', 1, 1024*1024),
 ];
 
 var numRuns = 10;
@@ -105,7 +122,7 @@ function runNextTest() {
   }
   var err = gl.getError();
   if (err) {
-    fail(bu.glEnumToString(err));
+    bu.fail(bu.glEnumToString(gl, err));
   }
 
   var averageIPS = Math.floor(totalIPS / numRuns);
