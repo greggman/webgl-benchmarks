@@ -448,6 +448,30 @@ var linkProgram = function(gl, program) {
   }
 };
 
+var setupProgramFromIds = function(gl, vshader, fshader) {
+  // create our shaders
+  var vertexShader = loadShaderFromScript(gl, vshader);
+  var fragmentShader = loadShaderFromScript(gl, fshader);
+
+  if (!vertexShader || !fragmentShader) {
+    return null;
+  }
+
+  // Create the program object
+  program = gl.createProgram();
+
+  if (!program) {
+    return null;
+  }
+
+  // Attach our two shaders to the program
+  gl.attachShader (program, vertexShader);
+  gl.attachShader (program, fragmentShader);
+
+  linkProgram(gl, program);
+  return program;
+};
+
 /**
  * Sets up WebGL with shaders.
  * @param {string} canvasName The id of the canvas.
@@ -781,6 +805,7 @@ return {
   fail: fail,
   output: output,
   setupProgram: setupProgram,
+  setupProgramFromIds: setupProgramFromIds,
   setupSimpleTextureFragmentShader: setupSimpleTextureFragmentShader,
   setupSimpleTextureProgram: setupSimpleTextureProgram,
   setupSimpleTextureVertexShader: setupSimpleTextureVertexShader,

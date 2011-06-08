@@ -1,0 +1,144 @@
+<!--
+Copyright (c) 2011 The Chromium Authors. All rights reserved.
+Use of this source code is governed by a BSD-style license that can be
+found in the LICENSE file.
+ -->
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>WebGL tests speed of various ways of modifiying a buffer.</title>
+<link rel="stylesheet" href="../resources/style.css"/>
+<script data-main="../scripts/test-start" src="../scripts/require.js"></script>
+</head>
+<body>
+<script>
+function makeBufferDataTest(size, usage) {
+    var data;
+    var buffer;
+
+    function init(gl) {
+      data = new Uint8Array(size);
+      buffer = gl.createBuffer()
+      gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+      gl.bufferData(gl.ARRAY_BUFFER, size, gl[usage]);
+    }
+
+    function test(gl) {
+      gl.bufferData(gl.ARRAY_BUFFER, data, gl[usage]);
+    }
+
+    return {
+      name: 'bufferData-' + size + '-' + usage,
+      init: init,
+      test: test
+    }
+}
+
+function makeBufferSubDataTest(size, usage, offset, fullSize) {
+    fullSize = fullSize || size;
+    offset = offset || 0;
+    var data;
+    var buffer;
+    var suffix = '' + size + '-' + usage;
+    if (fullSize != size) {
+      suffix = suffix + '@' + offset + ' in ' + fullSize;
+    }
+
+    function init(gl) {
+      data = new Uint8Array(size);
+      buffer = gl.createBuffer()
+      gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+      gl.bufferData(gl.ARRAY_BUFFER, fullSize, gl[usage]);
+    }
+
+    function test(gl) {
+      gl.bufferSubData(gl.ARRAY_BUFFER, offset, data);
+    }
+
+    return {
+      name: 'bufferSubData-' + suffix,
+      init: init,
+      test: test
+    }
+}
+
+function makeNewBufferDataTest(size, usage) {
+    var data;
+    var buffer;
+
+    function init(gl) {
+      data = new Uint8Array(size);
+    }
+
+    function test(gl) {
+      buffer = gl.createBuffer()
+      gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+      gl.bufferData(gl.ARRAY_BUFFER, size, gl[usage]);
+      gl.deleteBuffer(buffer);
+    }
+
+    return {
+      name: 'new-buffer-' + size + '-' + usage,
+      init: init,
+      test: test
+    }
+}
+
+function makeUniform3x3x2Test() {
+    var program;
+    var matLoc;
+    var tMatLoc;
+    var mat = new Float32Array(9);
+    var tMat = new Float32Array(9);
+
+    function init(gl) {
+      program = bu.setupProgramFromIds(gl, 'vs', 'fs');
+      gl.useProgram(program);
+      matLoc = gl.getUniformLocation(program, 'mat');
+      tmatLoc = gl.getUniformLocation(program, 'tmat');
+    }
+
+    function test(gl) {
+      gl.uniformMatrix3fv(matLoc, false, mat);
+      gl.uniformMatrix3fv(tMatLoc, false, tMat);
+    }
+
+    return {
+      name: 'uniform3x3x2',
+      init: init,
+      test: test
+    }
+}
+
+var tests = [
+  makeBufferDataTest(4 * 4 * 2, 'STATIC_DRAW'),
+  makeBufferSubDataTest(4 * 4 * 2, 'STATIC_DRAW'),
+  makeNewBufferDataTest(4 * 4 * 2, 'STATIC_DRAW'),
+  makeUniform3x3x2Test()
+];
+</script>
+<script id="vs" type="x-shader/x-vertex">
+uniform mat3 mat;
+uniform mat3 tmat;
+attribute vec2 position;
+attribute vec2 texCoord;
+varying vec2 v_texCoord;
+void main() {
+  gl_Position = vec4(mat * vec3(position, 1), 1);
+  v_texCoord = (mat * vec3(texCoord, 1)).xy;
+}
+</script>
+<script id="fs" type="x-shader/x-fragment">
+precision mediump float;
+varying vec2 v_texCoord;
+uniform sampler2D tex;
+uniform vec4 colorMult;        
+void main() {
+  gl_FragColor = texture2D(tex, v_texCoord) * colorMult;
+}
+</script>
+</body>
+</html>
+
+
